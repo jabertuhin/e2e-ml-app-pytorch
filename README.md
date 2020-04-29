@@ -145,7 +145,7 @@ python text_classification/train.py \
 ```
 2. GloVe, frozen, embeddings
 ```
-python text_classification/train2.py \
+python text_classification/train.py \
     --data-url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --use-glove --freeze-embeddings
 ```
 3. GloVe, unfrozen, embeddings
