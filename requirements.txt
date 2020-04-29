@@ -7,7 +7,7 @@ pytest==5.4.1
 sklearn==0.0
 streamlit==0.58.0
 tensorboard==2.1.1
-http://download.pytorch.org/whl/cpu/torch-1.4.0%2Bcpu-cp36-cp36m-win_amd64.whl
+http://download.pytorch.org/whl/cpu/torch-1.4.0%2Bcpu-cp36-cp36m-linux_x86_64.whl
 tqdm==4.43.0
 uvicorn==0.11.3
 
