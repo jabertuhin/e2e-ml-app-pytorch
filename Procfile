@@ -1,0 +1,1 @@
+web: streamlit run text_classification/streamlit.py
