@@ -1,1 +1,1 @@
-web: streamlit run text_classification/streamlit.py
+web: streamlit run --server.enableCORS false --server.port 80 text_classification/streamlit.py
