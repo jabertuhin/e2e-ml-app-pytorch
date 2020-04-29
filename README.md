@@ -115,6 +115,7 @@ text-classification/
 |   ├── data.py                           - data processing
 |   ├── models.py                         - model architectures
 |   ├── predict.py                        - inference script
+|   ├── streamlit.py                      - streamlit app
 |   ├── train.py                          - training script
 |   ├── utils.py                          - load embeddings
 ├── .dockerignore                       - files to ignore on docker
@@ -125,6 +126,7 @@ text-classification/
 ├── Dockerfile                          - dockerfile to containerize app
 ├── LICENSE                             - license description
 ├── logging.json                        - logger configuration
+├── Procfile                            - process script for Heroku
 ├── README.md                           - this README
 ├── requirements.txt                    - requirements
 ```
