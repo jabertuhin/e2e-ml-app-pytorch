@@ -10,6 +10,7 @@ venv/
 
 # Logs
 embeddings/
+experiments/
 logs/
 tensorboard/
 
