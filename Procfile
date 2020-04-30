@@ -1,1 +1,1 @@
-web: streamlit run --server.enableCORS false --server.port 5000 text_classification/streamlit.py
+web: sh setup.sh && streamlit run text_classification/streamlit.py
