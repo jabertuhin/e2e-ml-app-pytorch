@@ -1,0 +1,8 @@
+{
+    "class_to_index": {
+        "Business": 0,
+        "Sci/Tech": 1,
+        "Sports": 2,
+        "World": 3
+    }
+}
