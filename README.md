@@ -107,7 +107,7 @@ text-classification/
 ├── experiments/                        - experiment directories
 ├── logs/                               - directory of log files
 |   ├── errors/                           - error log
-|   ├── info/                             - info log
+|   └── info/                             - info log
 ├── tensorboard/                        - tensorboard logs
 ├── tests/                              - unit tests
 ├── text_classification/                - ml scripts
@@ -118,7 +118,7 @@ text-classification/
 |   ├── predict.py                        - inference script
 |   ├── streamlit.py                      - streamlit app
 |   ├── train.py                          - training script
-|   ├── utils.py                          - load embeddings
+|   └── utils.py                          - load embeddings
 ├── .dockerignore                       - files to ignore on docker
 ├── .gitignore                          - files to ignore on git
 ├── CODE_OF_CONDUCT.md                  - code of conduct
@@ -129,7 +129,7 @@ text-classification/
 ├── logging.json                        - logger configuration
 ├── Procfile                            - process script for Heroku
 ├── README.md                           - this README
-├── requirements.txt                    - requirements
+└── requirements.txt                    - requirements
 ```
 
 ## Overfit to small subset
