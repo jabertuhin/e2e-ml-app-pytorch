@@ -31,7 +31,6 @@ GOTO: http://localhost:5000/docs
 ### Scripts
 ```bash
 python text_classification/predict.py \
-    --experiment-id 'latest' \
     --text 'The Canadian minister signed in the new federal law.'
 ```
 
@@ -40,7 +39,6 @@ python text_classification/predict.py \
 curl "http://localhost:5000/predict" \
     -X POST -H "Content-Type: application/json" \
     -d '{
-            "experiment_id":"latest",
             "inputs":[
                 {
                     "text":"The Wimbledon tennis tournament starts next week!"
@@ -77,6 +75,12 @@ response = requests.post('http://0.0.0.0:5000/predict',
                          headers=headers, data=json.dumps(data))
 results = json.loads(response.text)
 print (json.dumps(results, indent=2, sort_keys=False))
+```
+
+## Streamlit
+```bash
+streamlit run text_classification/streamlit.py
+GOTO: http://localhost:8501
 ```
 
 ## TensorBoard
@@ -135,24 +139,24 @@ text-classification/
 ## Overfit to small subset
 ```
 python text_classification/train.py \
-    --data-url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --data-size 0.1
+    --data_url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --data_size 0.1 --num_epochs 3
 ```
 
 ## Experiments
 1. Random, unfrozen, embeddings
 ```
 python text_classification/train.py \
-    --data-url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle
+    --data_url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle
 ```
 2. GloVe, frozen, embeddings
 ```
 python text_classification/train.py \
-    --data-url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --use-glove --freeze-embeddings
+    --data_url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --use_glove --freeze_embeddings
 ```
 3. GloVe, unfrozen, embeddings
 ```
 python text_classification/train.py \
-    --data-url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --use-glove
+    --data_url https://raw.githubusercontent.com/madewithml/lessons/master/data/news.csv --lower --shuffle --use_glove
 ```
 
 ## Helpful docker commands

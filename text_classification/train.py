@@ -8,10 +8,11 @@ import itertools
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-import petname
 import random
 import time
 from tqdm import tqdm
+import wandb
+wandb.init(project="e2e-ml-app-pytorch")
 
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_fscore_support
@@ -19,7 +20,6 @@ from sklearn.metrics import precision_recall_fscore_support
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.tensorboard import SummaryWriter
 
 from text_classification import config
 from text_classification import data
@@ -85,8 +85,7 @@ def test_step(model, dataloader, device):
 
 
 def train(model, optimizer, scheduler, num_epochs, patience,
-          train_dataloader, val_dataloader, test_dataloader,
-          model_path, writer, device):
+          train_dataloader, val_dataloader, test_dataloader, device):
     best_val_loss = np.inf
     config.logger.info("→ Training:")
     for epoch in range(num_epochs):
@@ -99,14 +98,11 @@ def train(model, optimizer, scheduler, num_epochs, patience,
             f"Epoch: {epoch+1} | "
             f"train_loss: {train_loss:.2f}, train_acc: {train_acc:.1f}, "
             f"val_loss: {val_loss:.2f}, val_acc: {val_acc:.1f}")
-        writer.add_scalar(tag='training loss',
-                          scalar_value=train_loss, global_step=epoch)
-        writer.add_scalar(tag='training accuracy',
-                          scalar_value=train_acc, global_step=epoch)
-        writer.add_scalar(tag='validation loss',
-                          scalar_value=val_loss, global_step=epoch)
-        writer.add_scalar(tag='validation accuracy',
-                          scalar_value=val_acc, global_step=epoch)
+        wandb.log({
+            "train_loss": train_loss,
+            "train_accuracy": train_acc,
+            "val_loss": val_loss,
+            "val_accuracy": val_acc})
 
         # Adjust learning rate
         scheduler.step(val_loss)
@@ -115,7 +111,7 @@ def train(model, optimizer, scheduler, num_epochs, patience,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             _patience = patience  # reset _patience
-            torch.save(model.state_dict(), model_path)
+            torch.save(model.state_dict(), os.path.join(wandb.run.dir, 'model.pt'))
         else:
             _patience -= 1
         if not _patience:  # 0
@@ -190,48 +186,50 @@ if __name__ == '__main__':
                         help="initialization seed")
     parser.add_argument('--shuffle', action='store_true',
                         default=False, help="shuffle your data")
-    parser.add_argument('--data-url', type=str,
+    parser.add_argument('--data_url', type=str,
                         required=True, help="URL of data file")
     parser.add_argument('--lower', action='store_true',
                         default=False, help="lowercase all text")
-    parser.add_argument('--char-level', action='store_true',
+    parser.add_argument('--char_level', action='store_true',
                         default=False, help="split text to character level")
     parser.add_argument('--filters', type=str,
                         default=r"[!\"'#$%&()*\+,-./:;<=>?@\\\[\]^_`{|}~]",
                         help="text preprocessing filters")
-    parser.add_argument('--data-size', type=float,
+    parser.add_argument('--data_size', type=float,
                         default=1.0, help="proportion of data to use")
-    parser.add_argument('--train-size', type=float,
+    parser.add_argument('--train_size', type=float,
                         default=0.7, help="train data proportion")
-    parser.add_argument('--val-size', type=float,
+    parser.add_argument('--val_size', type=float,
                         default=0.15, help="val data proportion")
-    parser.add_argument('--test-size', type=float,
+    parser.add_argument('--test_size', type=float,
                         default=0.15, help="test data proportion")
-    parser.add_argument('--num-epochs', type=int,
+    parser.add_argument('--num_epochs', type=int,
                         default=10, help="# of epochs to train")
-    parser.add_argument('--batch-size', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=64,
                         help="# of samples per batch")
-    parser.add_argument('--embedding-dim', type=int,
-                        default=100,
+    parser.add_argument('--embedding_dim', type=int,
+                        default=300,
                         help="dimension of embeddings (50, 100, 200, 300 if using GloVe)")
-    parser.add_argument('--use-glove', action='store_true',
+    parser.add_argument('--use_glove', action='store_true',
                         default=False, help="Use pretrained GloVe embeddings")
-    parser.add_argument('--freeze-embeddings', action='store_true',
+    parser.add_argument('--freeze_embeddings', action='store_true',
                         default=False, help="Freeze embeddings during training")
-    parser.add_argument('--filter-sizes', nargs='+',
+    parser.add_argument('--filter_sizes', nargs='+',
                         default=[2, 3, 4], type=int, help="cnn filter sizes")
-    parser.add_argument('--num-filters', type=int, default=50,
+    parser.add_argument('--num_filters', type=int, default=100,
                         help="# of filters per cnn filter size")
-    parser.add_argument('--hidden-dim', type=int, default=128,
+    parser.add_argument('--hidden_dim', type=int, default=256,
                         help="# of hidden units in fc dense layers")
-    parser.add_argument('--dropout-p', type=float, default=0.1,
+    parser.add_argument('--dropout_p', type=float, default=0.1,
                         help="dropout proportion in fc dense layers")
-    parser.add_argument('--learning-rate', type=float,
+    parser.add_argument('--learning_rate', type=float,
                         default=1e-4, help="initial learning rate")
     parser.add_argument('--patience', type=int, default=3,
                         help="# of epochs of continued performance regression")
     args = parser.parse_args()
     config.logger.info(json.dumps(args.__dict__, indent=2))
+    wandb.config.update(args)
+    wandb.log({"run_dir": wandb.run.dir})
 
     # Set seeds for reproducibility
     np.random.seed(args.seed)
@@ -367,6 +365,7 @@ if __name__ == '__main__':
         pretrained_embeddings=embedding_matrix,
         freeze_embeddings=args.freeze_embeddings)
     model = model.to(device)
+    wandb.watch(model)
     config.logger.info(
         "→ Model:\n"
         f"  {model.named_parameters}")
@@ -376,16 +375,6 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min', factor=0.1, patience=3)
 
-    # Model dir
-    experiment_id = f'{int(time.time())}-{petname.Generate(2)}'
-    experiment_dir = os.path.join(config.EXPERIMENTS_DIR, experiment_id)
-    utils.create_dirs(dirpath=experiment_dir)
-    model_path = os.path.join(experiment_dir, 'model.h5')
-
-    # TensorBoard
-    tb_log_dir = f'{experiment_dir}/tensorboard/'
-    writer = SummaryWriter(log_dir=tb_log_dir)
-
     # Train
     best_val_loss = train(
         model=model, optimizer=optimizer, scheduler=scheduler,
@@ -393,19 +382,7 @@ if __name__ == '__main__':
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
         test_dataloader=test_dataloader,
-        model_path=model_path, writer=writer, device=device)
-
-    # Write hyperparamters to TensorBoard
-    hparams = {
-        'embedding_dim': args.embedding_dim,
-        'use_glove': args.use_glove,
-        'freeze_embeddings': args.freeze_embeddings,
-        'num_filters': args.num_filters,
-        'hidden_dim': args.hidden_dim,
-        'dropout_p': args.dropout_p,
-        'learning_rate': args.learning_rate
-    }
-    writer.add_hparams(hparam_dict=hparams, metric_dict={'best_val_loss': best_val_loss})
+        device=device)
 
     # Evaluation
     test_loss, test_acc, y_pred, y_target = test_step(
@@ -413,18 +390,22 @@ if __name__ == '__main__':
     config.logger.info(
         "→ Test performance:\n"
         f"  test_loss: {test_loss:.2f}, test_acc: {test_acc:.1f}")
+    wandb.log({
+        "test_loss": test_loss,
+        "test_accuracy": test_acc})
 
     # Per-class performance analysis
     performance = get_performance(y_pred, y_target, classes)
     plot_confusion_matrix(
         y_pred=y_pred, y_target=y_target, classes=classes,
-        fp=os.path.join(experiment_dir, 'confusion_matrix.png'))
+        fp=os.path.join(wandb.run.dir, 'confusion_matrix.png'))
     utils.save_dict(performance, filepath=os.path.join(
-        experiment_dir, 'performance.json'))
+        wandb.run.dir, 'performance.json'))
     config.logger.info(json.dumps(performance, indent=2, sort_keys=False))
 
     # Save
     utils.save_dict(args.__dict__, filepath=os.path.join(
-        experiment_dir, 'config.json'))
-    X_tokenizer.save(fp=os.path.join(experiment_dir, 'X_tokenizer.json'))
-    y_tokenizer.save(fp=os.path.join(experiment_dir, 'y_tokenizer.json'))
+        wandb.run.dir, 'config.json'))
+    X_tokenizer.save(fp=os.path.join(wandb.run.dir, 'X_tokenizer.json'))
+    y_tokenizer.save(fp=os.path.join(wandb.run.dir, 'y_tokenizer.json'))
+

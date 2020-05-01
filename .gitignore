@@ -13,6 +13,7 @@ embeddings/
 experiments/
 logs/
 tensorboard/
+wandb/
 
 # IPython Notebook
 .ipynb_checkpoints

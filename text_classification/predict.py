@@ -17,6 +17,32 @@ from text_classification import models
 from text_classification import utils
 
 
+def get_run_components(run_dir):
+    # Load args
+    config = utils.load_json(
+        os.path.join(run_dir, 'config.json'))
+    args = Namespace(**config)
+
+    # Load tokenizers
+    X_tokenizer = data.Tokenizer.load(
+        fp=os.path.join(run_dir, 'X_tokenizer.json'))
+    y_tokenizer = data.LabelEncoder.load(
+        fp=os.path.join(run_dir, 'y_tokenizer.json'))
+
+    # Load model
+    model = models.TextCNN(
+        embedding_dim=args.embedding_dim, vocab_size=len(X_tokenizer)+1,
+        num_filters=args.num_filters, filter_sizes=args.filter_sizes,
+        hidden_dim=args.hidden_dim, dropout_p=args.dropout_p,
+        num_classes=len(y_tokenizer.classes))
+    model.load_state_dict(torch.load(os.path.join(run_dir, 'model.pt')))
+    device = torch.device('cuda' if (
+        torch.cuda.is_available() and args.cuda) else 'cpu')
+    model = model.to(device)
+
+    return args, model, X_tokenizer, y_tokenizer
+
+
 def get_probability_distribution(y_prob, classes):
     results = {}
     for i, class_ in enumerate(classes):
@@ -72,23 +98,12 @@ def predict_step(model, dataloader, filter_sizes, device):
     return y_probs, conv_outputs
 
 
-def predict(experiment_id, inputs):
+def predict(inputs, args, model, X_tokenizer, y_tokenizer):
     """Predict the class for a text using
     a trained model from an experiment."""
-    # Get experiment config
-    if experiment_id == 'latest':
-        experiment_id = max(os.listdir(config.EXPERIMENTS_DIR))
-    experiment_dir = os.path.join(config.EXPERIMENTS_DIR, experiment_id)
-    experiment_config = utils.load_json(
-        os.path.join(experiment_dir, 'config.json'))
-    args = Namespace(**experiment_config)
 
     # Preprocess
     texts = [sample['text'] for sample in inputs]
-    X_tokenizer = data.Tokenizer.load(
-        fp=os.path.join(experiment_dir, 'X_tokenizer.json'))
-    y_tokenizer = data.LabelEncoder.load(
-        fp=os.path.join(experiment_dir, 'y_tokenizer.json'))
     preprocessed_texts = data.preprocess_texts(
         texts, lower=args.lower, filters=args.filters)
 
@@ -100,22 +115,11 @@ def predict(experiment_id, inputs):
     infer_dataloader = infer_dataset.create_dataloader(
         batch_size=args.batch_size)
 
-    # Load model
-    model = models.TextCNN(
-        embedding_dim=args.embedding_dim, vocab_size=len(X_tokenizer)+1,
-        num_filters=args.num_filters, filter_sizes=args.filter_sizes,
-        hidden_dim=args.hidden_dim, dropout_p=args.dropout_p,
-        num_classes=len(y_tokenizer.classes))
-    model.load_state_dict(torch.load(os.path.join(experiment_dir, 'model.h5')))
-    device = torch.device('cuda' if (
-        torch.cuda.is_available() and args.cuda) else 'cpu')
-    model = model.to(device)
-
     # Predict
     results = []
     y_prob, conv_outputs = predict_step(
         model=model, dataloader=infer_dataloader,
-        filter_sizes=args.filter_sizes, device=device)
+        filter_sizes=args.filter_sizes, device='cpu')
     for index in range(len(X_infer)):
         results.append({
             'raw_input': texts[index],
@@ -128,17 +132,26 @@ def predict(experiment_id, inputs):
     return results
 
 
-
 if __name__ == '__main__':
     # Arguments
     parser = ArgumentParser()
-    parser.add_argument('--experiment-id', type=str,
-                        default="latest", help="name of the model to load")
     parser.add_argument('--text', type=str,
                         required=True, help="text to predict")
     args = parser.parse_args()
+    inputs = [{'text': args.text}]
+
+    # Get best run
+    best_run = utils.get_best_run(project="GokuMohandas/e2e-ml-app-pytorch",
+                                  metric="test_loss", objective="minimize")
+
+    # Load best run (if needed)
+    best_run_dir = utils.load_run(run=best_run)
+
+    # Get run components for inference
+    args, model, X_tokenizer, y_tokenizer = get_run_components(
+        run_dir=best_run_dir)
 
     # Predict
-    results = predict(experiment_id=args.experiment_id,
-                      inputs=[{'text': args.text}])
+    results = predict(inputs=inputs, args=args, model=model,
+                      X_tokenizer=X_tokenizer, y_tokenizer=y_tokenizer)
     config.logger.info(json.dumps(results, indent=4, sort_keys=False))

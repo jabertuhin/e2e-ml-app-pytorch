@@ -9,3 +9,4 @@ streamlit==0.58.0
 tensorboard==2.1.1
 tqdm==4.43.0
 uvicorn==0.11.3
+wandb==0.8.34

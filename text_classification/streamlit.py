@@ -26,6 +26,18 @@ def normalize(x):
 st.title("Made With ML · Creating an End-to-End ML Application")
 st.write("""[<img src="https://github.com/madewithml/images/blob/master/images/yt.png?raw=true" style="width:1.2rem;"> Watch Lesson](https://www.youtube.com/channel/UCaVCnFQXS7PYMoYZu3KdC0Q/featured) · [<img src="https://github.com/madewithml/images/blob/master/images/github_logo.png?raw=true" style="width:1.1rem;"> GitHub](https://www.github.com/madewithml/lessons) · [<img src="https://avatars0.githubusercontent.com/u/60439358?s=200&v=4" style="width:1.2rem;"> Made With ML](https://madewithml.com)""", unsafe_allow_html=True)
 
+# Get best run
+project = 'GokuMohandas/e2e-ml-app-pytorch'
+best_run = utils.get_best_run(project=project,
+                              metric="test_loss", objective="minimize")
+
+# Load best run (if needed)
+best_run_dir = utils.load_run(run=best_run)
+
+# Get run components for inference
+args, model, X_tokenizer, y_tokenizer = predict.get_run_components(
+    run_dir=best_run_dir)
+
 # Pages
 page = st.sidebar.selectbox(
     "Choose a page", ['Inference', 'Model details'])
@@ -36,14 +48,16 @@ if page == 'Inference':
     # Input text
     text = st.text_input(
         "Enter text to classify", value="The Canadian minister signed in the new federal law.")
-    results = predict.predict(experiment_id='latest',
-                              inputs=[{'text': text}])
+
+    # Predict
+    results = predict.predict(inputs=[{'text': text}], args=args, model=model,
+                              X_tokenizer=X_tokenizer, y_tokenizer=y_tokenizer)
 
     # Results
     raw_text = results[0]['raw_input']
     st.write("**Raw text**:", raw_text)
     preprocessed_text = results[0]['preprocessed_input']
-    st.write("**Preproessed text**:", preprocessed_text)
+    st.write("**Preprocessed text**:", preprocessed_text)
     st.write("**Probabilities**:")
     st.json(results[0]['probabilities'])
 
@@ -64,7 +78,8 @@ if page == 'Inference':
     # Heatmap
     html = "<div>"
     for i, token in enumerate(words):
-        html += f'<span style="background-color: hsl(100, 100%, {((1-normalized_values[i]) * 53 + 50)}%">' + \
+        if token == '<UNK>': token = 'UNK'
+        html += f'<span style="background-color: hsl(100, 100%, {((1-normalized_values[i]) * 50 + 50)}%">' + \
             token + ' </span>'
     html += "</div><br>"
     st.write(html, unsafe_allow_html=True)
@@ -83,24 +98,25 @@ if page == 'Inference':
 
 elif page == 'Model details':
 
-    st.header("Model details")
+    st.header("All Experiments")
+    st.write(f'[https://app.wandb.ai/{project}](https://app.wandb.ai/{project})')
 
-    # Get experiment
-    experiment_id = max(os.listdir(config.EXPERIMENTS_DIR))
-    experiment_dir = os.path.join(config.EXPERIMENTS_DIR, experiment_id)
-    st.write("**ID**:", experiment_id)
+    st.header("Best Run")
+
+    # Run details
+    st.write(f"**Name**: {best_run._attrs['displayName']} ({best_run._attrs['name']})")
+    st.write("**Timestamp**:", best_run._attrs['createdAt'])
+    st.write(f"**Runtime**: {best_run._attrs['summaryMetrics']['_runtime']:.1f} seconds")
 
     # Performance
     st.write("**Performance**:")
     performance = utils.load_json(
-        os.path.join(experiment_dir, 'performance.json'))
+        os.path.join(best_run_dir, 'performance.json'))
     st.json(performance)
 
     # Confusion matrix
-    st.image(os.path.join(experiment_dir, 'confusion_matrix.png'))
+    st.image(os.path.join(best_run_dir, 'confusion_matrix.png'))
 
     # Config
     st.write("**Config**:")
-    experiment_config = utils.load_json(
-        os.path.join(experiment_dir, 'config.json'))
-    st.json(experiment_config)
+    st.json(best_run._attrs['config'])
