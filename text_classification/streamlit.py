@@ -47,7 +47,7 @@ if page == 'Inference':
 
     # Input text
     text = st.text_input(
-        "Enter text to classify", value="The Canadian minister signed in the new federal law.")
+        "Enter text to classify", value="The Canadian government officials proposed the new federal law.")
 
     # Predict
     results = predict.predict(inputs=[{'text': text}], args=args, model=model,

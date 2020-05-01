@@ -30,8 +30,7 @@ GOTO: http://localhost:5000/docs
 ## Inference
 ### Scripts
 ```bash
-python text_classification/predict.py \
-    --text 'The Canadian minister signed in the new federal law.'
+python text_classification/predict.py --text 'The Canadian minister signed in the new federal law.'
 ```
 
 ### cURL
@@ -102,6 +101,11 @@ docker build -t text-classification:latest -f Dockerfile .
 2. Run container
 ```bash
 docker run -d -p 5000:5000 -p 6006:6006 --name text-classification text-classification:latest
+```
+
+## Heroku
+```
+Set `WANDB_API_KEY` as an environment variable.
 ```
 
 ## Directory structure
