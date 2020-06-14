@@ -19,10 +19,15 @@
         - We use [Weights and Biases](https://wandb.com) (WandB), where you can easily track all the metrics of your experiment, config files, performance details, etc. for free. Check out the [Dashboards page](https://www.wandb.com/experiment-tracking) for an overview and tutorials.
         - When you're developing your models, start with simple approaches first and then slowly add complexity. You should clearly document (README, articles and [WandB reports](https://www.wandb.com/articles/workspaces-tables-reports-oh-my)) and save your progression from simple to more complex models so your audience can see the improvements. The ability to write well and document your thinking process is a core skill to have in research and industry.
         - WandB also has free tools for hyperparameter tuning ([Sweeps](https://www.wandb.com/sweeps)) and for data/pipeline/model management ([Artifacts](https://www.wandb.com/artifacts)).
-    4. Wrap your model as an API.
+    5. Robust prediction pipelines.
+        - When you actually deploy an ML application for the real world to use, we don't just look at the softmax scores.
+        - Before even doing any forward pass, we need to analyze the input and deem if it's within the manifold of the training data. If it's something new (or adversarial) we shouldn't send it down the ML pipeline because the results cannot be trusted.
+        - During processes like proprocessing, we need to constantly observe what the model received. For example, if the input has a bunch of unknown tokens than we need to flag the prediction because it may not be reliable.
+        - After the forward pass we need to do tests on the model's output as well. If the predicted class has a mediocre test set performance, then we need the class probability to be above some critical threshold. Similarly we can relax the threshold for classes where we do exceptionally well.
+    6. Wrap your model as an API.
         - Now we start to modularize larger operations (single/batch predict, get experiment details, etc.) so others can use our application without having to execute granular code. There are many options for this like [Flask](https://flask.palletsprojects.com/en/1.1.x/), [Django](https://www.djangoproject.com/), [FastAPI](https://fastapi.tiangolo.com/), etc. but we'll use FastAPI for the ease and [performance](https://fastapi.tiangolo.com/#performance) boost.
         - We can also use a Dockerfile to create a [Docker](https://towardsdatascience.com/how-docker-can-help-you-become-a-more-effective-data-scientist-7fc048ef91d5) image that runs our API. This is a great way to package our entire application to scale it (horizontally and vertically) depending on requirements and usage.
-    5. Create an interactive frontend for your application.
+    7. Create an interactive frontend for your application.
         - The best way to showcase your work is to let others easily play with it. We'll be using [Streamlit](https://www.streamlit.io/) to very quickly create an interactive medium for our application and use [Heroku](https://heroku.com/) to serve it (1000 hours of usage per month).
         - This is also a great skill to have because in industry you'll need to create this to show key stakeholders and great to have in documentation as well.
 
@@ -192,7 +197,7 @@ End-to-end topics that will be covered in subsequent lessons.
 - Dealing with imbalanced datasets
 - Distributed training for much larger models
 - GitHub actions for automatic testing during commits
-- Inference fail safe techniques (though we do have some basic tests here such as displaying UNK tokens and knowing which classes we need great certainty in)
+- Prediction fail safe techniques (input analysis, class-specific thresholds, etc.)
 
 ## Helpful docker commands
 • Build image
