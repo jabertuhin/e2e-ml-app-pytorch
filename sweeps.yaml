@@ -1,7 +1,7 @@
 program: text_classification/train.py
 command:
   - ${env}
-  - /Users/goku/Documents/madewithml/e2e-ml-app-pytorch/venv/bin/python
+  - $PWD/venv/bin/python
   - ${program}
   - "--use_glove"
   - "--shuffle"

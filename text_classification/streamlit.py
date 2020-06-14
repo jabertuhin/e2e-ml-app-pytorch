@@ -23,8 +23,9 @@ def normalize(x):
 
 
 # Title
-st.title("Made With ML · Creating an End-to-End ML Application")
-st.write("""[<img src="https://github.com/madewithml/images/blob/master/images/yt.png?raw=true" style="width:1.2rem;"> Watch Lesson](https://www.youtube.com/channel/UCaVCnFQXS7PYMoYZu3KdC0Q/featured) · [<img src="https://github.com/madewithml/images/blob/master/images/github_logo.png?raw=true" style="width:1.1rem;"> GitHub](https://www.github.com/madewithml/lessons) · [<img src="https://avatars0.githubusercontent.com/u/60439358?s=200&v=4" style="width:1.2rem;"> Made With ML](https://madewithml.com)""", unsafe_allow_html=True)
+st.title("Creating an End-to-End ML Application")
+st.write("""[<img src="https://github.com/madewithml/images/blob/master/images/yt.png?raw=true" style="width:1.2rem;"> Watch Lesson](https://www.youtube.com/madewithml?sub_confirmation=1) · [<img src="https://github.com/madewithml/images/blob/master/images/github_logo.png?raw=true" style="width:1.1rem;"> GitHub](https://github.com/madewithml/e2e-ml-app-pytorch) · [<img src="https://avatars0.githubusercontent.com/u/60439358?s=200&v=4" style="width:1.2rem;"> Made With ML](https://madewithml.com)""", unsafe_allow_html=True)
+st.write("Video lesson coming soon...")
 
 # Get best run
 project = 'GokuMohandas/e2e-ml-app-pytorch'
@@ -34,14 +35,14 @@ best_run = utils.get_best_run(project=project,
 # Load best run (if needed)
 best_run_dir = utils.load_run(run=best_run)
 
-# Get run components for inference
+# Get run components for prediction
 args, model, X_tokenizer, y_tokenizer = predict.get_run_components(
     run_dir=best_run_dir)
 
 # Pages
 page = st.sidebar.selectbox(
-    "Choose a page", ['Inference', 'Model details'])
-if page == 'Inference':
+    "Choose a page", ['Prediction', 'Model details'])
+if page == 'Prediction':
 
     st.header("🚀 Try it out!")
 

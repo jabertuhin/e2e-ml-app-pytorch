@@ -87,7 +87,7 @@ def test_step(model, dataloader, device):
 def train(model, optimizer, scheduler, num_epochs, patience,
           train_dataloader, val_dataloader, test_dataloader, device):
     best_val_loss = np.inf
-    config.logger.info("→ Training:")
+    config.logger.info("Training:")
     for epoch in range(num_epochs):
         # Steps
         train_loss, train_acc = train_step(model, optimizer, train_dataloader, device)
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=64,
                         help="# of samples per batch")
     parser.add_argument('--embedding_dim', type=int,
-                        default=300,
+                        default=100,
                         help="dimension of embeddings (50, 100, 200, 300 if using GloVe)")
     parser.add_argument('--use_glove', action='store_true',
                         default=False, help="Use pretrained GloVe embeddings")
@@ -216,9 +216,9 @@ if __name__ == '__main__':
                         default=False, help="Freeze embeddings during training")
     parser.add_argument('--filter_sizes', nargs='+',
                         default=[2, 3, 4], type=int, help="cnn filter sizes")
-    parser.add_argument('--num_filters', type=int, default=100,
+    parser.add_argument('--num_filters', type=int, default=50,
                         help="# of filters per cnn filter size")
-    parser.add_argument('--hidden_dim', type=int, default=256,
+    parser.add_argument('--hidden_dim', type=int, default=128,
                         help="# of hidden units in fc dense layers")
     parser.add_argument('--dropout_p', type=float, default=0.1,
                         help="dropout proportion in fc dense layers")
@@ -243,24 +243,25 @@ if __name__ == '__main__':
     # Set device
     device = torch.device('cuda' if (
         torch.cuda.is_available() and args.cuda) else 'cpu')
+
     # Load data
     X, y = data.load_data(url=args.data_url, data_size=args.data_size)
     config.logger.info(
-        "→ Raw data:\n"
+        "Raw data:\n"
         f"  {X[0]} → {y[0]}")
 
     # Preprocesss
     original_X = X
     X = data.preprocess_texts(texts=X, lower=args.lower, filters=args.filters)
     config.logger.info(
-        "→ Preprocessed data:\n"
+        "Preprocessed data:\n"
         f"  {original_X[0]} → {X[0]}")
 
     # Split data
     X_train, X_val, X_test, y_train, y_val, y_test = data.train_val_test_split(
         X=X, y=y, val_size=args.val_size, test_size=args.test_size, shuffle=args.shuffle)
     config.logger.info(
-        "→ Data splits:\n"
+        "Data splits:\n"
         f"  X_train: {len(X_train)}, y_train: {len(y_train)}\n"
         f"  X_val: {len(X_val)}, y_val: {len(y_val)}\n"
         f"  X_test: {len(X_test)}, y_test: {len(y_test)}")
@@ -270,7 +271,7 @@ if __name__ == '__main__':
     X_tokenizer.fit_on_texts(texts=X_train)
     vocab_size = len(X_tokenizer) + 1
     config.logger.info(
-        "→ X tokenizer:\n"
+        "X tokenizer:\n"
         f"  {X_tokenizer}")
 
     # Convert texts to sequences of indices
@@ -279,7 +280,7 @@ if __name__ == '__main__':
     X_test = np.array(X_tokenizer.texts_to_sequences(X_test))
     preprocessed_text = X_tokenizer.sequences_to_texts([X_train[0]])[0]
     config.logger.info(
-        "→ Text to indices:\n"
+        "Text to indices:\n"
         f"  (preprocessed) → {preprocessed_text}\n"
         f"  (tokenized) → {X_train[0]}")
 
@@ -288,9 +289,9 @@ if __name__ == '__main__':
     y_tokenizer = y_tokenizer.fit(y_train)
     classes = y_tokenizer.classes
     config.logger.info(
-        "→ y tokenizer:\n"
+        "y tokenizer:\n"
         f"  {y_tokenizer}\n"
-        "→ classes:\n"
+        "classes:\n"
         f"  {classes}")
 
     # Convert labels to tokens
@@ -299,16 +300,16 @@ if __name__ == '__main__':
     y_val = y_tokenizer.transform(y_val)
     y_test = y_tokenizer.transform(y_test)
     config.logger.info(
-        "→ Labels to indices:\n"
+        "Labels to indices:\n"
         f"  {class_} → {y_train[0]}")
 
     # Class weights
     counts = np.bincount(y_train)
     class_weights = {i: 1.0/count for i, count in enumerate(counts)}
     config.logger.info(
-        "→ class counts:\n"
+        "class counts:\n"
         f"  {counts}\n"
-        "→ class weights:\n"
+        "class weights:\n"
         f"  {class_weights}")
 
     # Create datasets
@@ -319,11 +320,11 @@ if __name__ == '__main__':
     test_dataset = data.TextDataset(
         X=X_test, y=y_test, max_filter_size=max(args.filter_sizes))
     config.logger.info(
-        "→ Data splits:\n"
+        "Data splits:\n"
         f"  Train dataset:{train_dataset.__str__()}\n"
         f"  Val dataset: {val_dataset.__str__()}\n"
         f"  Test dataset: {test_dataset.__str__()}\n"
-        "→ Sample point:\n"
+        "Sample point:\n"
         f"  {train_dataset[0]}")
 
     # Create dataloaders
@@ -335,7 +336,7 @@ if __name__ == '__main__':
         batch_size=args.batch_size)
     batch_X, batch_y = next(iter(train_dataloader))
     config.logger.info(
-        "→ Sample batch:\n"
+        "Sample batch:\n"
         f"  X: {list(batch_X.size())}\n"
         f"  y: {list(batch_y.size())}")
 
@@ -353,7 +354,7 @@ if __name__ == '__main__':
             embeddings=glove_embeddings, token_to_index=X_tokenizer.token_to_index,
             embedding_dim=args.embedding_dim)
         config.logger.info(
-            "→ GloVe Embeddings:\n"
+            "GloVe Embeddings:\n"
             f"{embedding_matrix.shape}")
 
     # Initialize model
@@ -367,7 +368,7 @@ if __name__ == '__main__':
     model = model.to(device)
     wandb.watch(model)
     config.logger.info(
-        "→ Model:\n"
+        "Model:\n"
         f"  {model.named_parameters}")
 
     # Define optimizer & scheduler
@@ -388,7 +389,7 @@ if __name__ == '__main__':
     test_loss, test_acc, y_pred, y_target = test_step(
         model=model, dataloader=test_dataloader, device=device)
     config.logger.info(
-        "→ Test performance:\n"
+        "Test performance:\n"
         f"  test_loss: {test_loss:.2f}, test_acc: {test_acc:.1f}")
     wandb.log({
         "test_loss": test_loss,

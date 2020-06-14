@@ -108,22 +108,22 @@ def predict(inputs, args, model, X_tokenizer, y_tokenizer):
         texts, lower=args.lower, filters=args.filters)
 
     # Create dataset
-    X_infer = np.array(X_tokenizer.texts_to_sequences(preprocessed_texts))
-    y_filler = np.array([0]*len(X_infer))
-    infer_dataset = data.TextDataset(
-        X=X_infer, y=y_filler, max_filter_size=max(args.filter_sizes))
-    infer_dataloader = infer_dataset.create_dataloader(
+    X = np.array(X_tokenizer.texts_to_sequences(preprocessed_texts))
+    y_filler = np.array([0]*len(X))
+    dataset = data.TextDataset(
+        X=X, y=y_filler, max_filter_size=max(args.filter_sizes))
+    dataloader = dataset.create_dataloader(
         batch_size=args.batch_size)
 
     # Predict
     results = []
     y_prob, conv_outputs = predict_step(
-        model=model, dataloader=infer_dataloader,
+        model=model, dataloader=dataloader,
         filter_sizes=args.filter_sizes, device='cpu')
-    for index in range(len(X_infer)):
+    for index in range(len(X)):
         results.append({
             'raw_input': texts[index],
-            'preprocessed_input': X_tokenizer.sequences_to_texts([X_infer[index]])[0],
+            'preprocessed_input': X_tokenizer.sequences_to_texts([X[index]])[0],
             'probabilities': get_probability_distribution(y_prob[index], y_tokenizer.classes),
             'top_n_grams': get_top_n_grams(tokens=preprocessed_texts[index].split(' '),
                                            conv_outputs={
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # Load best run (if needed)
     best_run_dir = utils.load_run(run=best_run)
 
-    # Get run components for inference
+    # Get run components for prediction
     args, model, X_tokenizer, y_tokenizer = get_run_components(
         run_dir=best_run_dir)
 
